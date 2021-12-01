@@ -1,5 +1,4 @@
-# Weakly-Supervised Video Object Grounding via Causal Intervention
+# WSVOG via Causal Intervention
+We have uploaded the core code of our submitted paper for peer review.
 
-This is the official implementation of "Weakly-Supervised Video Object Grounding via Causal Intervention". 
-
-The core code will be updated soon.
+The rest code as well as the running instruction will be updated soon.
