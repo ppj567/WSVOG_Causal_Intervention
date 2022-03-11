@@ -374,8 +374,7 @@ class WSTOG(nn.Module):
             object_num = torch.sum(object_select, dim=1)
             select_score = torch.mul(all_score, object_select)
             score = torch.div(torch.sum(select_score, dim = 1), object_num)
-            consis_loss = 0
-            return score, select_score, QR, consis_loss, QR_frm_weight
+            return score, select_score, QR, QR_frm_weight
         else:
             QR = torch.sigmoid(QR)
             QR = QR.transpose(0,1)
@@ -436,7 +435,7 @@ class WSTOG(nn.Module):
 
         loss = (torch.mean(F.softplus(torch.sub(score_n, score_p).div(0.3))))
 
-        return loss, 0
+        return loss
 
 
 
@@ -465,22 +464,22 @@ class WSTOG(nn.Module):
         embedding_p = self._feat_extract(input_pos_label, input_pos_feature, is_training)
         embedding_n = self._feat_extract(input_neg_label, input_neg_feature, is_training)
 
-        Sp1, select_score_p1, QR_p, consis_loss_p, QR_frm_weight_p = self._compute_score(embedding_p, embedding_p, input_pos_feature, is_training)
-        Sp2, select_score_p2, QR_n, consis_loss_n, QR_frm_weight_n = self._compute_score(embedding_n, embedding_n, input_neg_feature, is_training)
+        Sp1, select_score_p1, QR_p, QR_frm_weight_p = self._compute_score(embedding_p, embedding_p, input_pos_feature, is_training)
+        Sp2, select_score_p2, QR_n, QR_frm_weight_n = self._compute_score(embedding_n, embedding_n, input_neg_feature, is_training)
 
-        Srn, select_score_rn, QR_rn, consis_loss_rn, QR_frm_weight_rn = self._compute_score(embedding_p, embedding_n, input_neg_feature, is_training)
-        Sqn, select_score_qn, QR_qn, consis_loss_qn, QR_frm_weight_qn = self._compute_score(embedding_n, embedding_p, input_pos_feature, is_training)
+        Srn, select_score_rn, QR_rn, QR_frm_weight_rn = self._compute_score(embedding_p, embedding_n, input_neg_feature, is_training)
+        Sqn, select_score_qn, QR_qn, QR_frm_weight_qn = self._compute_score(embedding_n, embedding_p, input_pos_feature, is_training)
 
         total_loss = torch.add(self._log_loss(Sp1, Srn, Sqn), self._log_loss(Sp2, Srn, Sqn))
 
         if self.paras.train_mode == 'ACL_Spatial':
-            Q, embedding_counter_n, embedding_counter_p = self.ACL_Spatial(QR_p, embedding_p, input_pos_label, input_pos_feature)
-            loss_spatial, consis_loss = self.compute_ACL_score(QR_frm_weight_p, QR_p, embedding_p, Q, embedding_counter_n, embedding_counter_p, input_pos_label, input_pos_feature)
+            Q, embedding_acl_n, embedding_acl_p = self.ACL_Spatial(QR_p, embedding_p, input_pos_label, input_pos_feature)
+            loss_spatial = self.compute_ACL_score(QR_frm_weight_p, QR_p, embedding_p, Q, embedding_acl_n, embedding_acl_p, input_pos_label, input_pos_feature)
             return total_loss + loss_spatial
 
         elif self.paras.train_mode == 'ACL_Temporal':
-            Q, embedding_counter_n, embedding_counter_p = self.ACL_Temporal(QR_frm_weight_p, embedding_p, input_pos_label, input_pos_feature)
-            loss_temporal, consis_loss = self.compute_ACL_score(QR_frm_weight_p, QR_p, embedding_p, Q, embedding_counter_n, embedding_counter_p, input_pos_label, input_pos_feature)
+            Q, embedding_acl_n, embedding_acl_p = self.ACL_Temporal(QR_frm_weight_p, embedding_p, input_pos_label, input_pos_feature)
+            loss_temporal = self.compute_ACL_score(QR_frm_weight_p, QR_p, embedding_p, Q, embedding_acl_n, embedding_acl_p, input_pos_label, input_pos_feature)
             return total_loss + loss_temporal
 
         return total_loss
